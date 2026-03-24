@@ -5,6 +5,8 @@ Django settings for config project.
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from celery.schedules import crontab
+
 
 # -----------------------
 # BASE DIR
@@ -12,11 +14,13 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # -----------------------
 # LOAD ENV
 # -----------------------
 
 load_dotenv(BASE_DIR / ".env")
+
 
 # -----------------------
 # SECURITY
@@ -30,11 +34,42 @@ ALLOWED_HOSTS = []
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
+
+# -----------------------
+# REDIS / CELERY
+# -----------------------
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
+
+# -----------------------
+# TIMEZONE
+# -----------------------
+
+LANGUAGE_CODE = "en-us"
+
+TIME_ZONE = "Europe/Moscow"
+
+USE_TZ = True
+
+USE_I18N = True
+
+CELERY_TIMEZONE = TIME_ZONE
+
+
 # -----------------------
 # APPS
 # -----------------------
 
 INSTALLED_APPS = [
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,6 +79,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'drf_spectacular',
+    'django_celery_beat',
 
     'users',
     'courses',
@@ -51,6 +87,7 @@ INSTALLED_APPS = [
 ]
 
 AUTH_USER_MODEL = 'users.User'
+
 
 # -----------------------
 # MIDDLEWARE
@@ -66,7 +103,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'config.urls'
+
 
 # -----------------------
 # TEMPLATES
@@ -87,7 +126,9 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'config.wsgi.application'
+
 
 # -----------------------
 # DATABASE
@@ -100,36 +141,18 @@ DATABASES = {
     }
 }
 
+
 # -----------------------
 # PASSWORDS
 # -----------------------
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# -----------------------
-# I18N
-# -----------------------
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
 
 # -----------------------
 # STATIC
@@ -138,6 +161,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 
 # -----------------------
 # DRF
@@ -152,6 +176,7 @@ REST_FRAMEWORK = {
     ),
 }
 
+
 # -----------------------
 # SPECTACULAR
 # -----------------------
@@ -160,4 +185,28 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "LMS API",
     "DESCRIPTION": "Courses + Payments + Stripe",
     "VERSION": "1.0.0",
+}
+
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = True
+
+CELERY_BEAT_SCHEDULE = {
+
+    "check_users": {
+
+        "task": "users.tasks.deactivate_inactive_users",
+
+        "schedule": crontab(
+            minute=0,
+            hour=0,
+        ),
+
+    },
+
 }
