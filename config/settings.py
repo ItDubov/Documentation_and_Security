@@ -137,7 +137,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
+        "NAME": os.getenv("DB_NAME",'db.sqlite3',),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": os.getenv("DB_HOST"),
@@ -214,3 +214,5 @@ CELERY_BEAT_SCHEDULE = {
     },
 
 }
+
+STATIC_ROOT = BASE_DIR / "static"
