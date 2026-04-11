@@ -1,225 +1,159 @@
 # LMS Project (Django + DRF + Celery + Stripe + Docker)
 
-## 🚀 Запуск проекта через Docker
+## 🚀 Локальный запуск проекта через Docker
 
-### 1. Установить Docker
+### 1. Установка Docker
 
 Установите Docker Desktop:  
 https://www.docker.com/products/docker-desktop/
 
 ---
 
-### 2. Клонировать репозиторий
+### 2. Клонирование репозитория
 
-git clone <repo_url>  
+```bash
+git clone <repo_url>
 cd Documentation_and_Security
+3. Создание файла .env
 
----
+Создайте файл .env в корне проекта:
 
-### 3. Создать файл .env
+SECRET_KEY=your_secret_key
+DEBUG=True
 
-Создайте файл `.env` в корне проекта:
+STRIPE_SECRET_KEY=sk_test_xxx
 
-SECRET_KEY=  
-DEBUG=  
+REDIS_HOST=redis
+REDIS_PORT=6379
 
-STRIPE_SECRET_KEY= 
-
-REDIS_HOST=  
-REDIS_PORT=  
-
-DB_NAME=  
-DB_USER=  
-DB_PASSWORD=  
-DB_HOST=  
-DB_PORT=  
-
----
-
-### 4. Запуск проекта
-
+DB_NAME=lms_db
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+4. Запуск проекта
 docker compose up --build
+📦 Поднимаемые сервисы
 
-После запуска будут подняты:
+После запуска автоматически стартуют:
 
-- Django (web)
-- PostgreSQL (db)
-- Redis
-- Celery worker
-- Celery Beat
+Django (gunicorn)
+PostgreSQL
+Redis
+Celery worker
+Celery Beat
+nginx (reverse proxy)
+🌐 Проверка работоспособности
+✅ API и документация
 
----
+Открыть в браузере:
 
-## 📌 Проверка работоспособности сервисов
-
-### ✅ 1. Django (API + документация)
-
-http://localhost:8000/api/docs/
-
----
-
-### ✅ 2. PostgreSQL
-
+http://localhost/api/docs/
+✅ Проверка контейнеров
 docker ps
 
-Контейнер:
+Должны отображаться:
+
+django_app
 postgres_db
-
----
-
-### ✅ 3. Redis
-
+redis
+celery
+celery-beat
+nginx
+✅ Проверка Redis
 docker exec -it redis redis-cli ping
 
-Ответ:
+Ожидаемый ответ:
+
 PONG
-
----
-
-### ✅ 4. Celery worker
-
+✅ Проверка Celery
 docker compose logs celery
 
-Статус:
+Ожидаемый статус:
+
 ready
-
----
-
-### ✅ 5. Celery Beat
-
+✅ Проверка Celery Beat
 docker compose logs celery-beat
 
-Статус:
+Ожидаемый статус:
+
 Scheduler: Sending due task
-
----
-
-## 💳 Проверка Stripe оплаты
+💳 Проверка Stripe
 
 Тестовая карта:
 
 4242 4242 4242 4242
+📬 Проверка email
 
----
+Отправленные письма отображаются в логах контейнера Django.
 
-## 📬 Проверка email
-
-Письма отображаются в логах контейнера Django.
-
----
-
-## 🛑 Остановка проекта
-
+🛑 Остановка проекта
 docker compose down
+🚀 Деплой проекта на сервер (Yandex Cloud)
+📌 Приложение доступно по адресу:
+http://<SERVER_IP>
+⚙️ Ручной деплой
+1. Подключение к серверу
+ssh ubuntu@SERVER_IP
+2. Установка Docker
+sudo apt update
+sudo apt install docker.io -y
+sudo apt install docker-compose -y
+3. Клонирование проекта
+git clone <repo_url>
+cd Documentation_and_Security
+4. Создание .env
 
----
+Создать файл .env аналогично локальной настройке.
 
-# 🚀 Деплой и CI/CD (GitHub Actions)
+5. Запуск проекта
+docker compose up -d --build
+✅ Проверка работы
 
-Проект поддерживает автоматический деплой через GitHub Actions.
+Открыть в браузере:
 
-## ⚙️ Как работает pipeline
+http://SERVER_IP
+🔄 CI/CD (GitHub Actions)
+⚙️ Что делает pipeline
 
-При каждом push в ветку `main`:
+При каждом push в ветку develop:
 
-1. Запускаются тесты  
-2. Если тесты успешны → выполняется деплой  
-3. Проект обновляется на сервере через SSH  
+Запускается линтинг (flake8)
+Выполняются тесты Django
+Проверяется сборка Docker
+Выполняется автоматический деплой на сервер
+🔐 GitHub Secrets
 
----
+В репозитории необходимо добавить:
 
-## 🔐 Настройка SSH доступа
+SERVER_IP — IP сервера
+SERVER_USER — пользователь (обычно ubuntu)
+SSH_KEY — приватный SSH ключ
+🚀 Запуск деплоя
+git add .
+git commit -m "deploy"
+git push origin develop
 
-### 1. Генерация ключа (на сервере или локально)
+После этого:
 
-ssh-keygen -t rsa -b 4096
+автоматически запускается CI/CD pipeline
+при успешном выполнении происходит деплой на сервер
+⚠️ Возможные проблемы
+Docker не установлен
+Порт 80 закрыт на сервере
+Неверно настроен .env
+Используется localhost вместо db/redis
+Не настроены GitHub Secrets
+Контейнеры не запущены
+🎯 Итог
 
----
+Проект реализует:
 
-### 2. Добавление публичного ключа на сервер
-
-cat ~/.ssh/id_rsa.pub
-
-Добавить в:
-
-~/.ssh/authorized_keys
-
----
-
-### 3. Настройка прав
-
-chmod 700 ~/.ssh  
-chmod 600 ~/.ssh/authorized_keys  
-
----
-
-## 🔑 GitHub Secrets
-
-В репозитории:
-
-Settings → Secrets and variables → Actions
-
-Добавить:
-
-- SERVER_HOST → IP сервера  
-- SERVER_USER → пользователь (deploy)  
-- SERVER_SSH_KEY → приватный SSH ключ  
-
-Приватный ключ:
-
-cat ~/.ssh/id_rsa
-
----
-
-## ⚙️ GitHub Actions Workflow
-
-Файл:
-
-.github/workflows/deploy.yml
-
-Workflow:
-
-- устанавливает зависимости  
-- запускает тесты  
-- при успехе подключается к серверу  
-- выполняет git pull  
-- устанавливает зависимости  
-- применяет миграции  
-- перезапускает сервис  
-
----
-
-## 🚀 Запуск деплоя
-
-git add .  
-git commit -m "setup CI/CD"  
-git push origin main  
-
-После push:
-
-- автоматически запускается pipeline  
-- при успешных тестах происходит деплой  
-
----
-
-## ⚠️ Возможные проблемы
-
-- SSH ключ не добавлен  
-- неверные GitHub Secrets  
-- не установлен Docker / зависимости  
-- не настроен сервер  
-- ошибки в .env  
-- сервисы не запущены  
-
----
-
-## 🎯 Итог
-
-Проект поддерживает:
-
-- Docker окружение  
-- PostgreSQL + Redis  
-- Celery + Celery Beat  
-- Stripe платежи  
-- CI/CD через GitHub Actions  
-- Автоматический деплой на сервер  
+Django + DRF API
+Автогенерацию документации (drf-spectacular)
+Stripe платежи
+Celery + Celery Beat
+PostgreSQL + Redis
+Docker + nginx
+CI/CD через GitHub Actions
+Автоматический деплой на сервер
